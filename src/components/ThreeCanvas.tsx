@@ -103,7 +103,7 @@ export function ThreeCanvas({ activeSection, onIslandClick }: ThreeCanvasProps) 
               intensity={1.2} 
               luminanceThreshold={0.2} 
               luminanceSmoothing={0.9} 
-              height={300} 
+              height={120} 
             />
             <Vignette eskil={false} offset={0.1} darkness={1.1} />
           </EffectComposer>
