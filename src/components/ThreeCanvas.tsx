@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useRef } from 'react'
 import * as THREE from 'three'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import { ThreeScene } from './ThreeScene'
@@ -22,24 +22,50 @@ export const CAMERA_COORDINATES: Record<string, [number, number, number, number,
 
 interface CameraControllerProps {
   activeSection: string
+  scrollProgress: number
+  isLocked: boolean
 }
 
-function CameraController({ activeSection }: CameraControllerProps) {
+function CameraController({ activeSection, scrollProgress, isLocked }: CameraControllerProps) {
   const { camera } = useThree()
   
   // Keep track of target lookAt position
   const targetLookAt = useRef(new THREE.Vector3(0, -2, 0))
 
-  useEffect(() => {
-    // When section changes, compute mouse offset or other presets
-    const coords = CAMERA_COORDINATES[activeSection] || CAMERA_COORDINATES.overview
-    targetLookAt.current.set(coords[3], coords[4], coords[5])
-  }, [activeSection])
-
   useFrame((state) => {
-    const coords = CAMERA_COORDINATES[activeSection] || CAMERA_COORDINATES.overview
-    const [px, py, pz] = coords
-    
+    let px = 0, py = 8, pz = 48
+    let lx = 0, ly = -2, lz = 0
+
+    if (isLocked) {
+      // Locked zoom or overview mode - fly camera to specific coordinates preset
+      const coords = CAMERA_COORDINATES[activeSection] || CAMERA_COORDINATES.overview
+      px = coords[0]
+      py = coords[1]
+      pz = coords[2]
+      lx = coords[3]
+      ly = coords[4]
+      lz = coords[5]
+    } else {
+      // Continuous camera flight path driven in real time by scrolling progress (0 to 1)
+      const sectionsList = ['home', 'about', 'journey', 'events', 'domains', 'projects', 'community', 'family', 'join', 'contact']
+      const index = scrollProgress * (sectionsList.length - 1)
+      const baseIdx = Math.floor(index)
+      const fraction = index - baseIdx
+
+      const currentCoords = CAMERA_COORDINATES[sectionsList[baseIdx]]
+      const nextCoords = CAMERA_COORDINATES[sectionsList[Math.min(baseIdx + 1, sectionsList.length - 1)]]
+
+      px = currentCoords[0] + fraction * (nextCoords[0] - currentCoords[0])
+      py = currentCoords[1] + fraction * (nextCoords[1] - currentCoords[1])
+      pz = currentCoords[2] + fraction * (nextCoords[2] - currentCoords[2])
+
+      lx = currentCoords[3] + fraction * (nextCoords[3] - currentCoords[3])
+      ly = currentCoords[4] + fraction * (nextCoords[4] - currentCoords[4])
+      lz = currentCoords[5] + fraction * (nextCoords[5] - currentCoords[5])
+    }
+
+    targetLookAt.current.set(lx, ly, lz)
+
     // Add micro mouse reaction to camera target positions
     const mouseX = state.pointer.x * 1.5
     const mouseY = state.pointer.y * 1.2
@@ -64,10 +90,12 @@ function CameraController({ activeSection }: CameraControllerProps) {
 
 interface ThreeCanvasProps {
   activeSection: string
+  scrollProgress: number
+  isLocked: boolean
   onIslandClick: (domainName: string) => void
 }
 
-export function ThreeCanvas({ activeSection, onIslandClick }: ThreeCanvasProps) {
+export function ThreeCanvas({ activeSection, scrollProgress, isLocked, onIslandClick }: ThreeCanvasProps) {
   return (
     <div className="w-full h-full fixed top-0 left-0 -z-10 bg-brand-bg select-none">
       <Canvas
@@ -109,7 +137,11 @@ export function ThreeCanvas({ activeSection, onIslandClick }: ThreeCanvasProps) 
           </EffectComposer>
         </Suspense>
 
-        <CameraController activeSection={activeSection} />
+        <CameraController 
+          activeSection={activeSection} 
+          scrollProgress={scrollProgress}
+          isLocked={isLocked}
+        />
       </Canvas>
     </div>
   )

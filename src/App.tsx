@@ -69,6 +69,7 @@ export default function App() {
   const [zoomedSection, setZoomedSection] = useState<string | null>(null)
   const [showDashboard, setShowDashboard] = useState(false)
   const [soundMuted, setSoundMuted] = useState(true)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const lenisRef = useRef<Lenis | null>(null)
 
   // Audio Toggle
@@ -119,6 +120,8 @@ export default function App() {
       if (maxScroll <= 0) return
 
       const progress = scrollY / maxScroll
+      setScrollProgress(progress)
+      
       // Map progress to active section segment
       const idx = Math.min(Math.floor(progress * sections.length), sections.length - 1)
       setActiveSection(sections[idx])
@@ -164,6 +167,8 @@ export default function App() {
       {/* 3D WebGL Background Layer */}
       <ThreeCanvas 
         activeSection={zoomedSection || (showDashboard ? 'overview' : activeSection)} 
+        scrollProgress={scrollProgress}
+        isLocked={zoomedSection !== null || showDashboard}
         onIslandClick={handleZoomSection}
       />
 
