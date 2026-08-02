@@ -188,13 +188,13 @@ export function OrbitingIcons() {
     }
   })
 
-  // 3D icon representations
+  // 3D icon metadata
   const iconsData = useMemo(() => [
-    { name: 'Web', color: '#4285F4', geom: new THREE.TorusGeometry(0.3, 0.06, 8, 24) },
-    { name: 'AI', color: '#EA4335', geom: new THREE.OctahedronGeometry(0.35, 0) },
-    { name: 'Cloud', color: '#FBBC05', geom: new THREE.BoxGeometry(0.4, 0.25, 0.4) },
-    { name: 'Android', color: '#34A853', geom: new THREE.CylinderGeometry(0.2, 0.2, 0.5, 12) },
-    { name: 'Cyber', color: '#7DF9FF', geom: new THREE.ConeGeometry(0.25, 0.5, 4) },
+    { name: 'Web', color: '#4285F4' },
+    { name: 'AI', color: '#EA4335' },
+    { name: 'Cloud', color: '#FBBC05' },
+    { name: 'Android', color: '#34A853' },
+    { name: 'Cyber', color: '#7DF9FF' },
   ], [])
 
   return (
@@ -209,7 +209,12 @@ export function OrbitingIcons() {
         return (
           <group key={icon.name} position={[x, y, z]}>
             <Float floatIntensity={1.8} speed={2.5}>
-              <mesh geometry={icon.geom}>
+              <mesh>
+                {icon.name === 'Web' && <torusGeometry args={[0.3, 0.06, 8, 24]} />}
+                {icon.name === 'AI' && <octahedronGeometry args={[0.35, 0]} />}
+                {icon.name === 'Cloud' && <boxGeometry args={[0.4, 0.25, 0.4]} />}
+                {icon.name === 'Android' && <cylinderGeometry args={[0.2, 0.2, 0.5, 12]} />}
+                {icon.name === 'Cyber' && <coneGeometry args={[0.25, 0.5, 4]} />}
                 <meshPhysicalMaterial
                   color={icon.color}
                   roughness={0.1}
@@ -219,7 +224,12 @@ export function OrbitingIcons() {
                 />
               </mesh>
               {/* Scanline rings */}
-              <mesh geometry={icon.geom} scale={1.2}>
+              <mesh scale={1.2}>
+                {icon.name === 'Web' && <torusGeometry args={[0.3, 0.06, 8, 24]} />}
+                {icon.name === 'AI' && <octahedronGeometry args={[0.35, 0]} />}
+                {icon.name === 'Cloud' && <boxGeometry args={[0.4, 0.25, 0.4]} />}
+                {icon.name === 'Android' && <cylinderGeometry args={[0.2, 0.2, 0.5, 12]} />}
+                {icon.name === 'Cyber' && <coneGeometry args={[0.25, 0.5, 4]} />}
                 <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.12} />
               </mesh>
             </Float>

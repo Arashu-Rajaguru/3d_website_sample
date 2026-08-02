@@ -29,8 +29,12 @@ interface CameraControllerProps {
 function CameraController({ activeSection, scrollProgress, isLocked }: CameraControllerProps) {
   const { camera } = useThree()
   
-  // Keep track of target lookAt position
+  // Reusable vectors to prevent garbage collection allocations inside the 60 FPS useFrame loop
   const targetLookAt = useRef(new THREE.Vector3(0, -2, 0))
+  const targetPos = useRef(new THREE.Vector3())
+  const currentLookAt = useRef(new THREE.Vector3())
+  const lerpedLookAt = useRef(new THREE.Vector3())
+  const forwardVec = useRef(new THREE.Vector3(0, 0, -1))
 
   useFrame((state) => {
     let px = 0, py = 8, pz = 48
@@ -70,19 +74,19 @@ function CameraController({ activeSection, scrollProgress, isLocked }: CameraCon
     const mouseX = state.pointer.x * 1.5
     const mouseY = state.pointer.y * 1.2
 
-    // Target position with subtle mouse sway
-    const targetPos = new THREE.Vector3(px + mouseX, py + mouseY, pz)
+    // Set reusable target position vector instead of instantiating new Vector3 on every frame
+    targetPos.current.set(px + mouseX, py + mouseY, pz)
     
-    // Smoothly lerp position (slower for cinematic feel)
-    camera.position.lerp(targetPos, 0.04)
+    // Smoothly lerp position
+    camera.position.lerp(targetPos.current, 0.04)
 
-    // Smoothly lerp look-at point
-    const currentLookAt = new THREE.Vector3(0, 0, -1)
-    currentLookAt.applyQuaternion(camera.quaternion).add(camera.position)
+    // Compute camera look-at using reusable vectors
+    forwardVec.current.set(0, 0, -1)
+    currentLookAt.current.copy(forwardVec.current).applyQuaternion(camera.quaternion).add(camera.position)
     
-    // Lerp a helper vector towards target lookAt
-    const lerpedLookAt = new THREE.Vector3().lerpVectors(currentLookAt, targetLookAt.current, 0.04)
-    camera.lookAt(lerpedLookAt)
+    // Lerp towards target lookAt
+    lerpedLookAt.current.lerpVectors(currentLookAt.current, targetLookAt.current, 0.04)
+    camera.lookAt(lerpedLookAt.current)
   })
 
   return null
@@ -124,18 +128,18 @@ export function ThreeCanvas({ activeSection, scrollProgress, isLocked, onIslandC
 
         <Suspense fallback={null}>
           <ThreeScene onIslandClick={onIslandClick} />
-          
-          {/* Post Processing Effects */}
-          <EffectComposer>
-            <Bloom 
-              intensity={1.2} 
-              luminanceThreshold={0.2} 
-              luminanceSmoothing={0.9} 
-              height={120} 
-            />
-            <Vignette eskil={false} offset={0.1} darkness={1.1} />
-          </EffectComposer>
         </Suspense>
+
+        {/* Post Processing Effects - Mounted outside of Suspense to prevent texture unmount and lazy re-initialization */}
+        <EffectComposer>
+          <Bloom 
+            intensity={1.2} 
+            luminanceThreshold={0.2} 
+            luminanceSmoothing={0.9} 
+            height={120} 
+          />
+          <Vignette eskil={false} offset={0.1} darkness={1.1} />
+        </EffectComposer>
 
         <CameraController 
           activeSection={activeSection} 
